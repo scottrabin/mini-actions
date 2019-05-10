@@ -56,3 +56,28 @@ function mappedReducer<S, ActionMap extends { [key: string]: Reducer<S, Action<t
 export function createReducer<S>(initialState: S): ReducerCreator<S, never> {
     return mappedReducer(initialState, {});
 }
+
+/**
+ * Combines a set of reducers into one parent object reducer which delegates the
+ * modifications to each property of the object to the provided reducer.
+ *
+ * @param reducers Map of object property to reducer governing its value
+ */
+export function combineReducers<ReducerMap extends { [key: string]: Reducer<any, any> }>(
+    reducers: ReducerMap,
+): Reducer<void | { [K in keyof ReducerMap]: ReturnType<ReducerMap[K]> }, ReducerAction<ReducerMap[keyof ReducerMap]>> {
+    type State = { [K in keyof ReducerMap]: ReturnType<ReducerMap[K]> };
+    return (state, action) => {
+        const result: Partial<State> = {};
+        let changed = false;
+
+        for (let k of Object.keys(reducers)) {
+            result[k] = reducers[k](state && state[k], action);
+            if (!changed) {
+                changed = (state && state[k]) !== result[k];
+            }
+        }
+
+        return (changed ? result as State : state);
+    };
+}
