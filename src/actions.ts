@@ -1,51 +1,13 @@
-interface ActionUnit<T extends string> {
-    type: T;
-}
-
-interface ActionPayload<T extends string, P> extends ActionUnit<T> {
-    payload: P;
-}
-
-interface ActionPayloadMeta<T extends string, P, M> extends ActionPayload<T, P> {
-    meta: M;
-}
-
 export type Action<T extends string, P, M> =
-    ActionUnit<T> |
-    ActionPayload<T, P> |
-    ActionPayloadMeta<T, P, M>;
+    { type: T } &
+    (P extends void ? unknown : { payload: P }) &
+    (M extends void ? unknown : { meta: M });
 
 export type ActionCreator<T extends string, P, M, Args extends Array<any>> =
     ((...args: Args) => Action<T, P, M>) &
     {
         type: T;
     };
-
-function actionCreatorFn<T extends string, P, M, Args extends Array<any>>(
-    type: T,
-    toPayload: null | ((...args: Args) => P),
-    toMeta: null | ((...args: Args) => M),
-): ((...args: Args) => Action<T, P, M>) {
-    if (toPayload && toMeta) {
-        return (...args) => ({
-            type,
-            payload: toPayload(...args),
-            meta: toMeta(...args),
-        });
-    } else if (toPayload) {
-        return (...args) => ({
-            type,
-            payload: toPayload(...args),
-        });
-    } else if (toMeta) {
-        return (...args) => ({
-            type,
-            meta: toMeta(...args),
-        });
-    } else {
-        return () => ({ type });
-    }
-}
 
 /**
  * Creates an annotated action creator which can be used with the various utility
@@ -72,5 +34,15 @@ export function createAction<T extends string, P, M, Args extends Array<any>>(
     toPayload: null | ((...args: Args) => P) = null,
     toMeta: null | ((...args: Args) => M) = null,
 ): ActionCreator<T, P, M, Args> {
-    return Object.assign(actionCreatorFn(type, toPayload, toMeta), { type });
+    let fn: (...args: Args) => any;
+    if (toPayload && toMeta) {
+        fn = (...args) => ({ type, payload: toPayload(...args), meta: toMeta(...args) });
+    } else if (toPayload) {
+        fn = (...args) => ({ type, payload: toPayload(...args) });
+    } else if (toMeta) {
+        fn = (...args) => ({ type, meta: toMeta(...args) });
+    } else {
+        fn = () => ({ type });
+    }
+    return Object.assign(fn, { type });
 }
