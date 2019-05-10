@@ -1,0 +1,8 @@
+{
+  "name": "mini-actions",
+  "version": "0.1.0",
+  "description": "Helper utilities for typesafe Redux",
+  "main": "index.js",
+  "author": "Scott Rabin <scottrabin@gmail.com>",
+  "license": "MIT"
+}
