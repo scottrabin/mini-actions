@@ -4,5 +4,14 @@
   "description": "Helper utilities for typesafe Redux",
   "main": "index.js",
   "author": "Scott Rabin <scottrabin@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.0.12",
+    "jest": "^24.8.0",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.4.5"
+  }
 }
