@@ -1,7 +1,14 @@
+type OptionalProperty<T, P extends {}> =
+    (T extends void
+        ? unknown
+        : (unknown extends T
+            ? { [K in keyof P]?: unknown }
+            : { [K in keyof P]: T }));
+
 export type Action<T extends string, P, M> =
     { type: T } &
-    (P extends void ? unknown : { payload: P }) &
-    (M extends void ? unknown : { meta: M });
+    OptionalProperty<P, { payload: P }> &
+    OptionalProperty<M, { meta: M }>;
 
 export type ActionCreator<T extends string, P, M, Args extends Array<any>> =
     ((...args: Args) => Action<T, P, M>) &
