@@ -2,28 +2,87 @@
 #
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
-version: 2
-jobs:
-  build:
-    docker:
-      # specify the version you desire here
-      - image: circleci/node:12
+version: 2.1
 
+executors:
+  node:
+    docker:
+      - image: circleci/node:12
     working_directory: ~/repo
 
+jobs:
+  setup:
+    executor: node
     steps:
       - checkout
-
       - restore_cache:
           keys:
-            - v1-dependencies-{{ checksum "package.json" }}
+            - dependencies-{{ checksum "package.json" }}
       - run: yarn install
       - save_cache:
           paths:
             - node_modules
-          key: v1-dependencies-{{ checksum "package.json" }}
-
-      - run: yarn lint
+          key: dependencies-{{ checksum "package.json" }}
+      - persist_to_workspace:
+          root: ~/repo
+          paths: .
+  build:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/repo
       - run: yarn build
-      - run: yarn test
+      - persist_to_workspace:
+          root: ~/repo
+          paths: dist
+  lint:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run: yarn lint
+  test:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/repo
+      - run:
+          name: Install JUnit coverage reporter
+          command: yarn add --dev jest-junit
+      - run:
+          name: Run tests with JUnit as reporter
+          command: yarn run jest --ci --runInBand --reporters=default --reporters=jest-junit
+          environment:
+            JEST_JUNIT_OUTPUT: "reports/junit/js-test-results.xml"
+      - store_test_results:
+          path: reports/junit
+      - persist_to_workspace:
+          root: ~/repo
+          paths: coverage
+  code-coverage:
+    executor: node
+    steps:
+      - attach_workspace:
+          at: ~/repo
       - run: yarn run codecov
+
+workflows:
+  version: 2
+  build-test-deploy:
+    jobs:
+      - setup
+      - lint:
+          requires:
+            - setup
+      - test:
+          requires:
+            - setup
+      - build:
+          requires:
+            - setup
+      - code-coverage:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
