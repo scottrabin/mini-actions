@@ -5,6 +5,11 @@
     "types": "dist/index.d.ts",
     "main": "dist/index.js",
     "author": "Scott Rabin <scottrabin@gmail.com>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/scottrabin/mini-actions"
+    },
+    "homepage": "https://github.com/scottrabin/mini-actions",
     "license": "MIT",
     "scripts": {
         "build": "rm -rf ./dist && tsc",
