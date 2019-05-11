@@ -65,5 +65,14 @@ describe("reducers", () => {
                 moveY(-11),
             ].reduce(position, void 0)).toStrictEqual({ x: -2, y: -7 });
         });
+
+        it("should return the same initial object if none of the properties have changed", () => {
+            const increment = createAction("increment", (value: number) => value);
+            const reducer = combineReducers({
+                x: createReducer(0).when(increment, (state, { payload }) => state + payload),
+            });
+            const state = { x: 5 };
+            expect(reducer(state, increment(0))).toBe(state);
+        });
     });
 });
