@@ -7,7 +7,7 @@
     "author": "Scott Rabin <scottrabin@gmail.com>",
     "license": "MIT",
     "scripts": {
-        "build": "rm -rf ./dist && tsc --pretty",
+        "build": "rm -rf ./dist && tsc",
         "lint": "eslint \"src/**\" \"test/**\"",
         "test": "jest"
     },
