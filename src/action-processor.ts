@@ -1,4 +1,7 @@
-import { Action, ActionCreator } from "./actions";
+import {
+    Action,
+    ActionCreator,
+} from "./actions";
 
 /**
  * Extensible function which handles specific action types, as well as optionally
