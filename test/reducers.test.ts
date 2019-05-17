@@ -74,5 +74,36 @@ describe("reducers", () => {
             const state = { x: 5 };
             expect(reducer(state, increment(0))).toBe(state);
         });
+
+        it("should short circuit if none of the reducers handle the provided action", () => {
+            const firstAction = createAction("first");
+            const secondAction = createAction("second");
+            const spies = [
+                jest.fn(state => state + 1),
+                jest.fn(state => state - 1),
+            ];
+            const reducer = combineReducers({
+                top: combineReducers({
+                    one: createReducer(0).when(firstAction, spies[0]),
+                }),
+                bottom: combineReducers({
+                    second: createReducer(0).when(secondAction, spies[1]),
+                }),
+            });
+
+            expect(reducer({ top: { one: 0 }, bottom: { second: 0 } }, secondAction())).toMatchSnapshot();
+            expect(spies[0].mock.calls.length).toBe(0);
+            expect(spies[1].mock.calls.length).toBe(1);
+        });
+
+        it("should accept reducers not created via `createReducer`", () => {
+            const action = createAction("action");
+            const reducer = combineReducers({
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                property: (state: number = 0, _: any) => state,
+            });
+
+            expect(reducer(void 0, action())).toMatchSnapshot();
+        });
     });
 });

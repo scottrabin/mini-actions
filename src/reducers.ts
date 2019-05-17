@@ -3,6 +3,16 @@ import {
     ActionCreator,
 } from "./actions";
 
+const HANDLED_ACTIONS = Symbol("handled actions");
+
+interface PredefinedActions {
+    [HANDLED_ACTIONS]: { [type: string]: any };
+}
+
+function hasPredefinedActions(obj: unknown): obj is PredefinedActions {
+    return Object.prototype.hasOwnProperty.call(obj, HANDLED_ACTIONS);
+}
+
 /**
  * A reducer of some state S over the given action type(s) in A, which typically
  * becomes a discriminated union after building up well-typed reducers.
@@ -30,7 +40,7 @@ export type ReducerCreator<S, A> =
 function mappedReducer<S, ActionMap extends { [key: string]: Reducer<S, Action<typeof key, any, any>> }>(
     initialState: S,
     actionMap: ActionMap,
-): ReducerCreator<S, ReducerAction<ActionMap[keyof ActionMap]>> {
+): ReducerCreator<S, ReducerAction<ActionMap[keyof ActionMap]>> & PredefinedActions {
     return Object.assign(
         (state: S = initialState, action: ReducerAction<ActionMap[keyof ActionMap]>) => {
             if (action.type in actionMap) {
@@ -40,6 +50,7 @@ function mappedReducer<S, ActionMap extends { [key: string]: Reducer<S, Action<t
             }
         },
         {
+            [HANDLED_ACTIONS]: actionMap,
             when: <T extends string, P, M>(creator: ActionCreator<T, P, M, any>, reducer: Reducer<S, Action<T, P, M>>) => {
                 return mappedReducer(initialState, { ...actionMap, [creator.type]: reducer });
             }
@@ -67,17 +78,36 @@ export function combineReducers<ReducerMap extends { [key: string]: Reducer<any,
     reducers: ReducerMap,
 ): Reducer<void | { [K in keyof ReducerMap]: ReturnType<ReducerMap[K]> }, ReducerAction<ReducerMap[keyof ReducerMap]>> {
     type State = { [K in keyof ReducerMap]: ReturnType<ReducerMap[K]> };
-    return (state, action) => {
-        const result: Partial<State> = {};
-        let changed = false;
 
-        for (let k of Object.keys(reducers)) {
-            result[k] = reducers[k](state && state[k], action);
-            if (!changed) {
-                changed = (state && state[k]) !== result[k];
-            }
+    const handledActions = Object.keys(reducers).reduce((map: { [key: string]: any } | null, prop) => {
+        const reducer = reducers[prop];
+        if (map && hasPredefinedActions(reducer)) {
+            return Object.assign(map, reducer[HANDLED_ACTIONS]);
+        } else {
+            return null;
         }
+    }, {});
 
-        return (changed ? result as State : state);
-    };
+    return Object.assign(
+        (state: void | State, action: ReducerAction<ReducerMap[keyof ReducerMap]>): State => {
+            if (state && handledActions && !(action.type in handledActions)) {
+                return state;
+            }
+
+            const result: Partial<State> = {};
+            let changed = false;
+
+            for (let k of Object.keys(reducers)) {
+                result[k] = reducers[k](state && state[k], action);
+                if (!changed) {
+                    changed = (state && state[k]) !== result[k];
+                }
+            }
+
+            return (changed ? result : state) as State;
+        },
+        {
+            [HANDLED_ACTIONS]: handledActions,
+        },
+    );
 }

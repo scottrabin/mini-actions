@@ -1,0 +1,18 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`reducers combineReducers should accept reducers not created via \`createReducer\` 1`] = `
+Object {
+  "property": 0,
+}
+`;
+
+exports[`reducers combineReducers should short circuit if none of the reducers handle the provided action 1`] = `
+Object {
+  "bottom": Object {
+    "second": -1,
+  },
+  "top": Object {
+    "one": 0,
+  },
+}
+`;
