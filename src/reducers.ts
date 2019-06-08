@@ -22,14 +22,19 @@ export type Reducer<S, A> = (state: S, action: A) => S;
 /**
  * Extracts the defined action from a given reducer
  */
-type ReducerAction<R extends Reducer<any, any>> = Parameters<R>[1];
+export type ReducerAction<R extends Reducer<any, any>> = Parameters<R>[1];
+
+/**
+ * Extracts the state defined by a given reducer
+ */
+export type ReducerState<R> = (R extends Reducer<infer S, any> ? S : never);
 
 /**
  * An enhanced reducer function augmented with a `when` method, which allows
  * for immutably constructing reducers which accept only specific action types.
  */
 export type ReducerCreator<S, A> =
-    Reducer<void | S, A> & {
+    Reducer<S, A> & {
         when: <T extends string, P, M>(
             creator: ActionCreator<T, P, M, any>,
             reducer: Reducer<S, Action<T, P, M>>,
@@ -97,7 +102,7 @@ export function combineReducers<ReducerMap extends { [key: string]: Reducer<any,
             const result: Partial<State> = {};
             let changed = false;
 
-            for (let k of Object.keys(reducers)) {
+            for (let k of (Object.keys(reducers) as Array<keyof ReducerMap>)) {
                 result[k] = reducers[k](state && state[k], action);
                 if (!changed) {
                     changed = (state && state[k]) !== result[k];

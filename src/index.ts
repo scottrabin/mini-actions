@@ -10,6 +10,8 @@ export const handle = {
 };
 export {
     Reducer,
+    ReducerAction,
+    ReducerState,
     createReducer,
     combineReducers,
 } from "./reducers";
