@@ -37,7 +37,7 @@ function createProcessor<ActionMap extends { [key: string]: (...args: any) => an
     actionMap: ActionMap,
     otherwise?: O,
 ): ActionProcessor<ActionMap[keyof ActionMap], O> {
-    let fn;
+    let fn: any;
     if (otherwise) {
         fn = <T extends string>(
             action: (T extends keyof ActionMap ? Parameters<ActionMap[T]>[0] : Action<string, unknown, unknown>),
