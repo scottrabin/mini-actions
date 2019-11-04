@@ -1,6 +1,6 @@
 {
     "name": "mini-actions",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Helper utilities for typesafe Redux",
     "types": "dist/index.d.ts",
     "main": "dist/index.js",
