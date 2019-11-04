@@ -20,6 +20,23 @@ function hasPredefinedActions(obj: unknown): obj is PredefinedActions {
 export type Reducer<S, A> = (state: S, action: A) => S;
 
 /**
+ * A reducer which has a default value for the state assigned. Mostly a
+ * convenience type for clarity through the library.
+ */
+export type ReducerWithDefault<S, A> = Reducer<S, A> & ((state: undefined, action: A) => S);
+
+/**
+ * An enhanced reducer with a `when` method, which allows for immutably
+ * constructing reducers that only accept specific action types.
+ */
+export interface ReducerExtender<S, A> {
+    when: <T extends string, P, M>(
+        creator: ActionCreator<T, P, M, any>,
+        reducer: Reducer<S, Action<T, P, M>>,
+    ) => ReducerWithDefault<S, A | Action<T, P, M>> & ReducerExtender<S, A | Action<T, P, M>>;
+}
+
+/**
  * Extracts the defined action from a given reducer
  */
 export type ReducerAction<R extends Reducer<any, any>> = Parameters<R>[1];
@@ -33,13 +50,7 @@ export type ReducerState<R> = (R extends Reducer<infer S, any> ? S : never);
  * An enhanced reducer function augmented with a `when` method, which allows
  * for immutably constructing reducers which accept only specific action types.
  */
-export type ReducerCreator<S, A> =
-    Reducer<S, A> & {
-        when: <T extends string, P, M>(
-            creator: ActionCreator<T, P, M, any>,
-            reducer: Reducer<S, Action<T, P, M>>,
-        ) => ReducerCreator<S, A | Action<T, P, M>>;
-    };
+type ReducerCreator<S, A> = ReducerWithDefault<S, A> & ReducerExtender<S, A>;
 
 // eslint-disable-next-line no-undef
 function mappedReducer<S, ActionMap extends { [key: string]: Reducer<S, Action<typeof key, any, any>> }>(
@@ -102,7 +113,7 @@ export function combineReducers<ReducerMap extends { [key: string]: Reducer<any,
             const result: Partial<State> = {};
             let changed = false;
 
-            for (let k of (Object.keys(reducers) as Array<keyof ReducerMap>)) {
+            for (const k of (Object.keys(reducers) as Array<keyof ReducerMap>)) {
                 result[k] = reducers[k](state && state[k], action);
                 if (!changed) {
                     changed = (state && state[k]) !== result[k];
